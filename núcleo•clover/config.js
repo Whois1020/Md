@@ -13,15 +13,16 @@ import moment from 'moment-timezone';
 global.botNumber = ''; // Ejemplo: 525568138672
 //*─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─*
 global.owner = [
-  ['5215544876071', '🜲 𝗖𝗿𝗲𝗮𝗱𝗼𝗿 👻', true],
-  ['5217971289909'],
-  ['5217971282613', '', false], // Espacios opcionales
-  ['', '', false],
+  ['51936994155', '🜲 𝗖𝗿𝗲𝗮𝗱𝗼𝗿 👻', true],
+  ['51904937048'],
+  ['', 'BrayanOFC', true],
+  ['ñ', '', false], // Espacios opcionales
+  ['', 'Brayan uchiha 🐦‍⬛', true],
   ['', '', false]
 ];
-global.mods = ['5215544876071'];
-global.suittag = ['5215544876071'];
-global.prems = ['5215544876071'];
+global.mods = ['51936994155'];
+global.suittag = ['51936994155'];
+global.prems = ['51936994155'];
 
 //*─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─*
 global.libreria = 'Baileys';
@@ -36,33 +37,33 @@ global.blackJadibts = true;
 
 //*─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─*
 global.packsticker = `
-  𝕭𝖑𝖆𝖈𝖐 𝕮𝖑𝖔𝖛𝖊𝖗 ᚲ 𝐓𝐡𝐞 𝐂𝐚𝐫𝐥𝐨𝐬`;
+  Arceus Whois`;
 
-global.packname = '𝕭𝖑𝖆𝖈𝖐 𝕮𝖑𝖔𝖛𝖊𝖗 ☘';
+global.packname = 'Arceus Whois ☘';
 
 global.author = `
 ♾━━━━━━━━━━━━━━━♾`;
 //*─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─*
-global.wm = '𝕭𝖑𝖆𝖈𝖐 𝕮𝖑𝖔𝖛𝖊𝖗 ☘';
-global.titulowm = '𝕭𝖑𝖆𝖈𝖐 𝕮𝖑𝖔𝖛𝖊𝖗 ☘';
-global.igfg = 'ᥫ𝐓𝐇𝐄 𝐂𝐀𝐑𝐋𝐎𝐒'
-global.botname = '𝕭𝖑𝖆𝖈𝖐 𝕮𝖑𝖔𝖛𝖊𝖗 ☘'
-global.dev = '© ⍴᥆ᥕᥱrᥱძ ᑲᥡ the Legends ⚡'
-global.textbot = '𝑩𝑳𝑨𝑪𝑲 𝑪𝑳𝑶𝑽𝑬𝑹  : 𝐓𝐇𝐄 𝐂𝐀𝐑𝐋𝐎𝐒'
-global.gt = '͟͞𝕭𝖑𝖆𝖈𝖐 𝕮𝖑𝖔𝖛𝖊𝖗 ☘͟͞';
-global.namechannel = '𝑩𝑳𝑨𝑪𝑲 𝑪𝑳𝑶𝑽𝑬𝑹 / 𝐓𝐇𝐄 𝐂𝐀𝐑𝐋𝐎𝐒'
+global.wm = 'Arceus Whois ☘';
+global.titulowm = 'Arceus Whois ☘';
+global.igfg = 'ᥫWhois'
+global.botname = 'Arceus Whois ☘'
+global.dev = '© ⍴᥆ᥕᥱrᥱძ ᑲᥡ the Arceus ⚡'
+global.textbot = 'Arceus  : Whois'
+global.gt = '͟͞Arceus Whois ☘͟͞';
+global.namechannel = 'Arceus / Whois'
 // Moneda interna
 global.monedas = 'monedas';
 
 //*─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─*
-global.gp1 = 'https://chat.whatsapp.com/IbADO35sBSC4G1FBTGbHIE?mode=ac_t';
-global.gp2 = 'https://chat.whatsapp.com/FiBcPMYEO7mG4m16gBbwpP?mode=ac_t';
-global.comunidad1 = 'https://chat.whatsapp.com/FgQ4q11AjaO8ddyc1LvK4r?mode=ac_t';
-global.channel = 'https://whatsapp.com/channel/0029VbB36XC8aKvQevh8Bp04';
+global.gp1 = 'https://chat.whatsapp.com/Fi6FHZ8VSGnAT7CKJkcd9r?mode=wwc';
+global.gp2 = 'https://chat.whatsapp.com/Fi6FHZ8VSGnAT7CKJkcd9r?mode=wwc';
+global.comunidad1 = 'https://chat.whatsapp.com/Fi6FHZ8VSGnAT7CKJkcd9r?mode=wwc';
+global.channel = 'https://whatsapp.com/channel/0029Vb5oUp43LdQUVViHwc0m';
 global.cn = global.channel;
-global.yt = 'https://www.youtube.com/@ElCarlos.87';
-global.md = 'https://github.com/thecarlos19/black-clover-MD';
-global.correo = 'thecarlospcok@gmail.com';
+global.yt = 'https://www.youtube.com/';
+global.md = 'https://github.com';
+global.correo = 'yallico2024@gmail.com';
 
 global.catalogo = fs.readFileSync(new URL('../src/catalogo.jpg', import.meta.url));
 global.photoSity = [global.catalogo];
@@ -87,7 +88,7 @@ global.estilo = {
   }
 };
 
-global.ch = { ch1: "120363419782804545@newsletter" };
+global.ch = { ch1: "120363419947391620@newsletter" };
 global.rcanal = global.ch.ch1;
 
 //*─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─✞─ׄ─ׅ─ׄ─*
