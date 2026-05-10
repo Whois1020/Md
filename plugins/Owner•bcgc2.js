@@ -55,7 +55,7 @@ const handler = async (m, { conn, text }) => {
     }
   }
 
-  return m.reply(`✅ *Difusión completada:*\n📡 *Grupos alcanzados:* ${totalGrupos}\n🧠 *Sistema:* Black Clover IA`);
+  return m.reply(`✅ *Difusión completada:*\n📡 *Grupos alcanzados:* ${totalGrupos}\n🧠 *Sistema:* IA`);
 };
 
 handler.help = ['bcgc2', 'bcg'];

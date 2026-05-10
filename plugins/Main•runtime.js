@@ -11,11 +11,11 @@ let handler = async (m, { conn, usedPrefix, command }) => {
       contextInfo: {
         externalAdReply: {
           showAdAttribution: false,
-          title: global.packname || 'Black-clover-MD',
-          body: global.dev || '✡︎ Dev • The Carlos',
+          title: global.packname || 'Arceus Whois',
+          body: global.dev || '✡︎ Dev • Whois',
           mediaType: 2,
           thumbnail: global.icons ? { url: global.icons } : null,
-          sourceUrl: global.channel || 'https://github.com/thecarlos19'
+          sourceUrl: global.channel || 'https://github.com'
         }
       }
     },

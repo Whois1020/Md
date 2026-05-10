@@ -11,7 +11,7 @@ handler.all = async function(m) {
 
     // Mapeo de palabras clave y respuestas
     const respuestas = {
-        "bot": `🚩 ¡Hola! Soy asta, en que puedo ayudarte hoy?\n\n✰ Usa *!menu* para ver mis comandos.`,
+        "bot": `🚩 ¡Hola! Soy Arceus, en que puedo ayudarte hoy?\n\n✰ Usa *!menu* para ver mis comandos.`,
         //"corin": `🚀 CorinPlus Hosting ¡El plus que necesitas!\n🚩 *Dash:* https://dash.corinplus.com\n🌱 *Panel:* https://ctrl.corinplus.com`, // comentado como en tu código
         "sexo": "*pervertido* 🫣",
         "teta": "*que caliente eres* 🥵",

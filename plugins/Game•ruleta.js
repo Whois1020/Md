@@ -1,100 +1,128 @@
 let cooldowns = {}
 
-// Función para bloquear comandos si el usuario tiene deuda
 function checkDeuda(users, m, conn) {
   if (!users) return false
+
   if (users.bloqueado) {
-    // Solo permitir comando del banco
-    const isBancoCommand = m.text && m.text.toLowerCase().startsWith('banco')
-    if (!isBancoCommand) {
-      conn.reply(m.chat, `🚫 No puedes usar este comando mientras tengas deuda pendiente. Usa *banco pagar <cantidad>* para pagar tu préstamo.`, m)
-      return true // Bloquea el comando
+    const isBanco = m.text && m.text.toLowerCase().startsWith('banco')
+
+    if (!isBanco) {
+      conn.reply(
+        m.chat,
+        `🚫 No puedes jugar mientras tengas deuda.\nUsa *banco pagar <cantidad>*`,
+        m
+      )
+      return true
     }
   }
-  return false // Permitir el comando
+  return false
 }
 
-let handler = async (m, { conn, text, command, usedPrefix }) => {
-  let users = global.db.data.users[m.sender]
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+  let users = global.db.data.users[m.sender] ||= { monedas: 0 }
 
-  // Bloqueo por deuda
   if (checkDeuda(users, m, conn)) return
 
-  let tiempoEspera = 10
+  const cooldown = 10000
+  const now = Date.now()
 
-  if (!users.monedas || users.monedas <= 0) {
-    return conn.reply(m.chat, `🚩 No tienes monedas para apostar.`, m)
+  if (cooldowns[m.sender] && now - cooldowns[m.sender] < cooldown) {
+    const restante = Math.ceil((cooldown - (now - cooldowns[m.sender])) / 1000)
+    return conn.reply(
+      m.chat,
+      `🚩 Espera *${restante}s* antes de volver a apostar.`,
+      m
+    )
   }
 
-  if (cooldowns[m.sender] && Date.now() - cooldowns[m.sender] < tiempoEspera * 1000) {
-    let tiempoRestante = segundosAHMS(Math.ceil((cooldowns[m.sender] + tiempoEspera * 1000 - Date.now()) / 1000))
-    conn.reply(m.chat, `🚩 Ya has iniciado una apuesta recientemente, espera *⏱ ${tiempoRestante}* para apostar nuevamente`, m)
-    return
+  if (!text) {
+    return conn.reply(
+      m.chat,
+      `🎰 *Ruleta*
+
+Uso:
+• ${usedPrefix + command} 20 black
+• ${usedPrefix + command} 50 red`,
+      m
+    )
   }
 
-  cooldowns[m.sender] = Date.now()
+  const args = text.trim().split(' ')
+  if (args.length !== 2) {
+    return conn.reply(m.chat, '🚩 Formato: <cantidad> <black/red>', m)
+  }
 
-  if (!text) return conn.reply(m.chat, `🚩 Debes ingresar una cantidad de *💰 Monedas* y apostar a un color, por ejemplo: *${usedPrefix + command} 20 black*`, m)
-
-  let args = text.trim().split(" ")
-  if (args.length !== 2) return conn.reply(m.chat, `🚩 Formato incorrecto. Debes ingresar una cantidad de *💰 Monedas* y apostar a un color, por ejemplo: *${usedPrefix + command} 20 black*`, m)
-
-  let monedas = parseInt(args[0])
+  let bet = parseInt(args[0])
   let color = args[1].toLowerCase()
 
-  if (isNaN(monedas) || monedas <= 0) return conn.reply(m.chat, `🚩 Por favor, ingresa una cantidad válida para la apuesta.`, m)
-  if (!(color === 'black' || color === 'red')) return conn.reply(m.chat, "🚩 Debes apostar a un color válido: *black* o *red*.", m)
-  if (monedas > users.monedas) return conn.reply(m.chat, "🚩 No tienes suficientes *💰 Monedas* para realizar esa apuesta.", m)
+  if (isNaN(bet) || bet <= 0) return conn.reply(m.chat, '🚩 Apuesta inválida.', m)
+  if (!['black', 'red'].includes(color)) return conn.reply(m.chat, '🚩 Solo black o red.', m)
+  if (bet > users.monedas) return conn.reply(m.chat, '🚩 No tienes suficientes monedas.', m)
 
-  await conn.reply(m.chat, `🚩 Apostaste ${monedas} *💰 Monedas* al color ${color}. Espera *⏱ 10 segundos* para conocer el resultado.`, m)
+  cooldowns[m.sender] = now
+
+  conn.reply(
+    m.chat,
+    `🎰 Apostaste *${bet} monedas* al color *${color}*\n⏳ Girando la ruleta...`,
+    m
+  )
 
   setTimeout(() => {
-    // Regla especial: apuesta de 2000 o más pierde automáticamente
-    if (monedas >= 2000) {
-      users.monedas -= monedas
-      conn.reply(m.chat, `💥 Apostaste ${monedas} monedas y automáticamente perdiste la apuesta por ser demasiado grande. Total: ${users.monedas} *💰 Monedas*.`, m)
-      return
+    // 🚨 apuesta grande pierde (nerf anti abuso)
+    if (bet >= 2000) {
+      users.monedas -= bet
+      if (users.monedas < 0) users.monedas = 0
+
+      return conn.reply(
+        m.chat,
+        `💥 Apuesta demasiado grande = pérdida automática\n❌ -${bet} monedas`,
+        m
+      )
     }
 
-    let resultado = Math.random()
+    const roll = Math.random()
+    const result = roll < 0.5 ? 'black' : 'red'
 
-    // Premio mayor 1%
-    if (resultado < 0.01) {
+    // 🎁 jackpot
+    if (roll < 0.01) {
       users.monedas += 1000000
-      users.premium = Date.now() + 2 * 24 * 60 * 60 * 1000 // 2 días en ms
-      conn.reply(m.chat, `🎉 ¡FELICIDADES! Obtuviste el premio mayor: 1.000.000 *💰 Monedas* y Premium por 2 días! Total: ${users.monedas} *💰 Monedas*.`, m)
-      return
+      users.premium = Date.now() + 2 * 24 * 60 * 60 * 1000
+
+      return conn.reply(
+        m.chat,
+        `🎉 ¡JACKPOT!\n+1,000,000 monedas 💰\n👑 Premium 2 días`,
+        m
+      )
     }
 
-    // Ganancia normal 50/50
-    let win = false
-    if (resultado < 0.505) {
-      win = color === 'black'
-    } else {
-      win = color === 'red'
-    }
+    const win = color === result
 
     if (win) {
-      let ganancia = monedas * 2
-      users.monedas += ganancia
-      conn.reply(m.chat, `🚩 ¡Ganaste! Obtuviste ${ganancia} *💰 Monedas*. Total: ${users.monedas} *💰 Monedas*.`, m)
-    } else {
-      users.monedas -= monedas
-      conn.reply(m.chat, `🚩 Perdiste. Se restaron ${monedas} *💰 Monedas*. Total: ${users.monedas} *💰 Monedas*.`, m)
-    }
+      const winAmount = bet * 2
+      users.monedas += winAmount
 
+      conn.reply(
+        m.chat,
+        `🎉 Ganaste!\nColor: ${result}\n💰 +${winAmount} monedas`,
+        m
+      )
+    } else {
+      users.monedas -= bet
+      if (users.monedas < 0) users.monedas = 0
+
+      conn.reply(
+        m.chat,
+        `💀 Perdiste!\nColor: ${result}\n❌ -${bet} monedas`,
+        m
+      )
+    }
   }, 10000)
 }
 
 handler.tags = ['fun']
-handler.help = ['ruleta *<cantidad> <color>*']
+handler.help = ['ruleta <cantidad> <color>']
 handler.command = ['ruleta', 'roulette', 'rt']
-handler.register = true
-handler.group = true 
-export default handler
+handler.register = false
+handler.group = true
 
-function segundosAHMS(segundos) {
-  let min = Math.floor(segundos / 60)
-  let sec = segundos % 60
-  return `${min > 0 ? min + " min " : ""}${sec} seg`
-}
+export default handler

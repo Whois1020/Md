@@ -1,91 +1,89 @@
 import fs from 'fs'
 import path from 'path'
 
-const imgDir = path.resolve('./src/img')
-let images = []
+export async function before(m, { conn, participants, groupMetadata }) {
+  if (!m.isGroup) return
 
-try {
-  images = fs.readdirSync(imgDir).filter(file => /\.(jpe?g|png|webp)$/i.test(file))
-} catch {
-  images = []
-}
+  const chat = global.db.data.chats[m.chat]
+  if (!chat || !chat.welcome) return
 
-global.getRandomImage = () => {
-  if (images.length === 0) return null
-  const randomImage = images[Math.floor(Math.random() * images.length)]
-  return fs.readFileSync(path.join(imgDir, randomImage))
-}
+  let metadata = groupMetadata || await conn.groupMetadata(m.chat).catch(() => null)
+  if (!metadata) return
 
-export async function before(m, { conn }) {
-  try {
-    if (!m.isGroup) return true
-    const chat = global.db.data.chats[m.chat]
-    if (!chat || !chat.welcome) return true
+  let groupName = metadata.subject
+  let pp = await conn.profilePictureUrl(m.chat, 'image').catch(() => null)
 
-    const type = m.messageStubType
-    if (![7, 27, 28, 32].includes(type)) return true
+  const welcomeTitles = [
+    '👋 Welcome ',
+    '✨ Bienvenido',
+    '🍀 Nuevo integrante',
+    '⚔️ Se une un bebito',
+    '🌟 Llegó alguien nuevo'
+  ]
 
-    const params = m.messageStubParameters || []
-    if (params.length === 0 && !m.participant) return true
+  const byeTitles = [
+    '👋 Goodbye',
+    '⚠️ Alguien salió',
+    '🌙 Hasta luego',
+    '🍂 Se fue un miembro',
+    '🚪 Salida del grupo'
+  ]
 
-    const who = (params[0] || m.participant) + '@s.whatsapp.net'
-    const user = global.db.data.users[who]
-    const userName = user ? user.name : await conn.getName(who)
-    const mentionedJids = [who]
+  if (m.messageStubType === 27 || m.messageStubType === 31) {
 
-    const audioWelcome = 'https://files.catbox.moe/ha1slk.mp3'
-    const audioGoodbye = 'https://files.catbox.moe/5cslwo.mp3'
-    const thumbnailBuffer = global.getRandomImage()
-
-    if ([7, 27].includes(type)) {
-      await conn.sendMessage(
-        m.chat,
-        {
-          audio: { url: audioWelcome },
-          mimetype: 'audio/mpeg',
-          fileName: 'welcome.mp3',
-          contextInfo: {
-            mentionedJid: mentionedJids,
-            externalAdReply: {
-              title: "─ W E L C O M E ─🥷🏻",
-              body: `${userName} ha llegado al grupo!`,
-              thumbnail: thumbnailBuffer,
-              mediaType: 1,
-              renderLargerThumbnail: false,
-              sourceUrl: "https://wa.me/" + who.split('@')[0]
-            }
-          }
-        },
-        { quoted: m }
-      )
+    const contextInfo = {
+      externalAdReply: {
+        showAdAttribution: false,
+        title: welcomeTitles[Math.floor(Math.random() * welcomeTitles.length)],
+        body: groupName,
+        mediaType: 2,
+        sourceUrl: global.redes || '',
+        thumbnailUrl: pp
+      }
     }
 
-    if ([28, 32].includes(type)) {
-      await conn.sendMessage(
-        m.chat,
-        {
-          audio: { url: audioGoodbye },
+    let audioPath = path.resolve('./src/welcome.mp3')
+
+    if (fs.existsSync(audioPath)) {
+      let audioBuffer = fs.readFileSync(audioPath)
+      await conn.sendMessage(m.chat, {
+        audio: audioBuffer,
+        mimetype: 'audio/mpeg',
+        ptt: true,
+        contextInfo
+      }).catch(async () => {
+        await conn.sendMessage(m.chat, {
+          audio: { url: audioPath },
           mimetype: 'audio/mpeg',
-          fileName: 'goodbye.mp3',
-          contextInfo: {
-            mentionedJid: mentionedJids,
-            externalAdReply: {
-              title: "─Ａ Ｄ Ｉ Ō S─👋🏻",
-              body: `${userName} se ha despedido.`,
-              thumbnail: thumbnailBuffer,
-              mediaType: 1,
-              renderLargerThumbnail: false,
-              sourceUrl: "https://wa.me/" + who.split('@')[0]
-            }
-          }
-        },
-        { quoted: m }
-      )
+          ptt: true,
+          contextInfo
+        })
+      })
+    }
+  }
+
+  if (m.messageStubType === 28 || m.messageStubType === 32) {
+
+    const contextInfo = {
+      externalAdReply: {
+        showAdAttribution: false,
+        title: byeTitles[Math.floor(Math.random() * byeTitles.length)],
+        body: groupName,
+        mediaType: 2,
+        sourceUrl: global.redes || '',
+        thumbnailUrl: pp
+      }
     }
 
-    return true
-  } catch (err) {
-    console.error('[ERROR en welcome/adios]:', err)
-    return true
+    let audioPath = path.resolve('./src/bye.mp3')
+
+    if (fs.existsSync(audioPath)) {
+      await conn.sendMessage(m.chat, {
+        audio: fs.readFileSync(audioPath),
+        mimetype: 'audio/mpeg',
+        ptt: true,
+        contextInfo
+      })
+    }
   }
 }

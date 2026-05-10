@@ -7,7 +7,7 @@ let name = await conn.getName(m.sender)
 let user = global.db.data.users[who]
 let nom = conn.getName(m.sender)
 if (!global.db.data.settings[conn.user.jid].restrict) return conn.reply(m.chat, `🚩 *Este comando está deshabilitado por mi creador*`, m) 
-if (!text) return m.reply(`🍟 Ingrese el número de la persona que quieres añadir a este grupo.\n\n🚩 Ejemplo:\n*${usedPrefix + command}* 66666666666`)
+if (!text) return m.reply(`🍟 Ingrese el número de la persona que quieres añadir a este grupo.\n\n🚩 Ejemplo:\n*${usedPrefix + command}* 51936994155`)
 if (text.includes('+')) return m.reply(`🍟 Ingrese el número todo junto sin el *(+)*`)
 if (isNaN(text)) return m.reply(`🍟 El número debe ser solo en dígitos`)
 

@@ -22,8 +22,8 @@ let handler = async (m, { conn, args }) => {
         stiker = await sticker(
           media,
           false,
-          global.packsticker || 'Black Clover Pack',
-          global.author || 'By The Carlos'
+          global.packsticker || 'Pack',
+          global.author || 'By Whois'
         )
         if (Buffer.isBuffer(stiker)) fs.writeFileSync(tmpPath, stiker)
       } catch (e) {
@@ -35,8 +35,8 @@ let handler = async (m, { conn, args }) => {
         stiker = await sticker(
           false,
           out,
-          global.packsticker || 'Black Clover Pack',
-          global.author || 'By The Carlos'
+          global.packsticker || 'Arceus Bot',
+          global.author || 'By Whois'
         )
         if (Buffer.isBuffer(stiker)) fs.writeFileSync(tmpPath, stiker)
       }
@@ -45,8 +45,8 @@ let handler = async (m, { conn, args }) => {
         stiker = await sticker(
           false,
           args[0],
-          global.packsticker || 'Black Clover Pack',
-          global.author || 'By The Carlos'
+          global.packsticker || 'Arceus Bot',
+          global.author || 'By Whois'
         )
         const tmpPath = path.join('./tmp', `${Date.now()}.webp`)
         if (Buffer.isBuffer(stiker)) fs.writeFileSync(tmpPath, stiker)
@@ -71,8 +71,8 @@ let handler = async (m, { conn, args }) => {
         if (thumb) {
           contextInfo = {
             externalAdReply: {
-              title: 'Black-clover-MD 🥷🏻',
-              body: 'Dev • The Carlos ✨',
+              title: 'Arceus Whois ⚡',
+              body: 'Dev • Whois ✨',
               mediaType: 2,
               thumbnail: thumb
             }
@@ -107,7 +107,7 @@ handler.help = ['sticker', 'stiker', 's'].map(v => v + ' <imagen|video|url>')
 handler.tags = ['sticker']
 handler.command = ['s', 'sticker', 'stiker']
 handler.group = false
-handler.register = true
+handler.register = false
 
 export default handler
 

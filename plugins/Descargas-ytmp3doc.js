@@ -1,187 +1,206 @@
+import { spawn } from "child_process"
+import fs from "fs"
 import fetch from "node-fetch"
 import yts from "yt-search"
 import Jimp from "jimp"
 import axios from "axios"
-import crypto from "crypto"
+
+const name = "Descargas - black clover"
 
 async function resizeImage(buffer, size = 300) {
-  const image = await Jimp.read(buffer)
-  return image.resize(size, size).getBufferAsync(Jimp.MIME_JPEG)
+  const img = await Jimp.read(buffer)
+  return img.resize(size, size).getBufferAsync(Jimp.MIME_JPEG)
 }
 
-const name = 'Descargas - black clover'
-
-const savetube = {
-  api: {
-    base: "https://media.savetube.me/api",
-    info: "/v2/info",
-    download: "/download",
-    cdn: "/random-cdn"
-  },
-  headers: {
-    accept: "*/*",
-    "content-type": "application/json",
-    origin: "https://yt.savetube.me",
-    referer: "https://yt.savetube.me/",
-    "user-agent": "Postify/1.0.0"
-  },
-  crypto: {
-    hexToBuffer: (hexString) => {
-      const matches = hexString.match(/.{1,2}/g)
-      return Buffer.from(matches.join(""), "hex")
-    },
-    decrypt: async (enc) => {
-      const secretKey = "C5D58EF67A7584E4A29F6C35BBC4EB12"
-      const data = Buffer.from(enc, "base64")
-      const iv = data.slice(0, 16)
-      const content = data.slice(16)
-      const key = savetube.crypto.hexToBuffer(secretKey)
-      const decipher = crypto.createDecipheriv("aes-128-cbc", key, iv)
-      let decrypted = decipher.update(content)
-      decrypted = Buffer.concat([decrypted, decipher.final()])
-      return JSON.parse(decrypted.toString())
-    }
-  },
-  isUrl: (str) => {
-    try {
-      new URL(str)
-      return /youtube.com|youtu.be/.test(str)
-    } catch {
-      return false
-    }
-  },
-  youtube: (url) => {
-    const patterns = [
-      /youtube.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
-      /youtube.com\/embed\/([a-zA-Z0-9_-]{11})/,
-      /youtu.be\/([a-zA-Z0-9_-]{11})/
-    ]
-    for (let pattern of patterns) {
-      const match = url.match(pattern)
-      if (match) return match[1]
-    }
-    return null
-  },
-  request: async (endpoint, data = {}, method = "post") => {
-    try {
-      const { data: response } = await axios({
-        method,
-        url: `${endpoint.startsWith("http") ? "" : savetube.api.base}${endpoint}`,
-        data: method === "post" ? data : undefined,
-        params: method === "get" ? data : undefined,
-        headers: savetube.headers
-      })
-      return { status: true, code: 200, data: response }
-    } catch (error) {
-      return { status: false, code: error.response?.status || 500, error: error.message }
-    }
-  },
-  getCDN: async () => {
-    const response = await savetube.request(savetube.api.cdn, {}, "get")
-    if (!response.status) return response
-    return { status: true, code: 200, data: response.data.cdn }
-  },
-  download: async (link, type = "audio") => {
-    if (!savetube.isUrl(link)) return { status: false, code: 400, error: "URL inválida" }
-    const id = savetube.youtube(link)
-    if (!id) return { status: false, code: 400, error: "No se pudo obtener el ID del video" }
-    try {
-      const cdnx = await savetube.getCDN()
-      if (!cdnx.status) return cdnx
-      const cdn = cdnx.data
-      const videoInfo = await savetube.request(`https://${cdn}${savetube.api.info}`, { url: `https://www.youtube.com/watch?v=${id}` })
-      if (!videoInfo.status || !videoInfo.data?.data) return { status: false, code: 500, error: "No se pudo obtener información del video" }
-      const decrypted = await savetube.crypto.decrypt(videoInfo.data.data)
-      const downloadData = await savetube.request(
-        `https://${cdn}${savetube.api.download}`,
-        { id, downloadType: type === "audio" ? "audio" : "video", quality: type === "audio" ? "mp3" : "720p", key: decrypted.key }
-      )
-      if (!downloadData?.data?.data?.downloadUrl) return { status: false, code: 500, error: "No se pudo obtener link de descarga" }
-      return {
-        status: true,
-        code: 200,
-        result: {
-          title: decrypted.title || "Desconocido",
-          author: decrypted.channel || "Desconocido",
-          views: decrypted.viewCount || "Desconocido",
-          timestamp: decrypted.lengthSeconds || "0",
-          ago: decrypted.uploadedAt || "Desconocido",
-          format: type === "audio" ? "mp3" : "mp4",
-          download: downloadData.data.data.downloadUrl,
-          thumbnail: decrypted.thumbnail || null
-        }
-      }
-    } catch (error) {
-      return { status: false, code: 500, error: error.message }
-    }
-  }
-}
-
-const handler = async (m, { conn, text, command }) => {
-  await m.react("⌛")
-  if (!text?.trim()) return conn.reply(m.chat, "Dame el link de YouTube o el nombre XD", m)
+async function validateUrl(url) {
+  if (!url) return null
   try {
-    let url, title, thumbnail, author, vistas, timestamp, ago
-    if (savetube.isUrl(text)) {
-      const id = savetube.youtube(text)
-      const search = await yts({ videoId: id })
-      url = text
-      title = search.title || "Desconocido"
-      thumbnail = search.thumbnail
-      author = search.author?.name || "Desconocido"
-      vistas = search.views?.toLocaleString?.() || "Desconocido"
-      timestamp = search.timestamp || "Desconocido"
-      ago = search.ago || "Desconocido"
-    } else {
-      const search = await yts.search({ query: text, pages: 1 })
-      if (!search.videos.length) return m.reply("❌ ¡Ni con el radar del dragón encontré ese video!")
-      const videoInfo = search.videos[0]
-      url = videoInfo.url
-      title = videoInfo.title
-      thumbnail = videoInfo.thumbnail
-      author = videoInfo.author?.name || "Desconocido"
-      vistas = videoInfo.views?.toLocaleString?.() || "Desconocido"
-      timestamp = videoInfo.timestamp || "Desconocido"
-      ago = videoInfo.ago || "Desconocido"
+    const res = await fetch(url, { method: "HEAD" })
+    return res.ok ? url : null
+  } catch {
+    return null
+  }
+}
+
+async function getFallbackMp3(videoUrl, videoId) {
+  try {
+    const ryuResponse = await axios.get(`https://api.ryuzei.xyz/dl/ytmp3?url=${encodeURIComponent(videoUrl)}&key=Corvette`)
+    const ryuLink = ryuResponse.data?.url
+    const valid = await validateUrl(ryuLink)
+    if (valid) return valid
+  } catch {}
+
+  const apiSources = [
+    () => axios.get(`https://api.betabotz.eu.org/api/download/ytmp3?url=${encodeURIComponent(videoUrl)}&apikey=Btz-b2H2x`)
+      .then(r => r.data?.result?.mp3 || r.data?.result?.download?.url),
+
+    () => axios.get(`https://sylphy.xyz/download/v3/ytmp3?url=${videoId}&api_key=Killua-Wa`)
+      .then(r => r.data?.result?.download?.url || r.data?.result?.url),
+
+    () => axios.get(`https://api-adonix.ultraplus.click/download/ytaudio?apikey=Yuki-WaBot&url=${encodeURIComponent(videoUrl)}`)
+      .then(r => r.data?.result?.url || r.data?.data?.url || r.data?.url),
+
+    () => axios.get(`https://api.vreden.web.id/api/v1/download/youtube/audio?url=${encodeURIComponent(videoUrl)}`)
+      .then(r => r.data?.result?.download?.url),
+
+    () => axios.get(`https://api.stellarwa.xyz/dl/ytdl?url=${encodeURIComponent(videoUrl)}&format=mp3&key=YukiWaBot`)
+      .then(r => r.data?.result?.download || r.data?.result)
+  ]
+
+  for (let fn of apiSources) {
+    try {
+      const link = await fn()
+      const valid = await validateUrl(link)
+      if (valid) return valid
+    } catch {}
+  }
+
+  throw new Error("No hay servidores disponibles")
+}
+
+const yt = {
+  static: Object.freeze({
+    baseUrl: "https://cnv.cx",
+    headers: {
+      "accept-encoding": "gzip, deflate, br, zstd",
+      origin: "https://frame.y2meta-uk.com",
+      "user-agent": "Mozilla/5.0"
     }
-    const thumbResized = await resizeImage(await (await fetch(thumbnail)).buffer(), 300)
-    const res3 = await fetch("https://qu.ax/gPaVW.jpg")
-    const thumb3 = Buffer.from(await res3.arrayBuffer())
-    const fkontak = {
-      key: { fromMe: false, participant: "0@s.whatsapp.net" },
-      message: {
-        documentMessage: {
-          title: `👑「 ${title} 」📿`,
-          fileName: `${name}`,
-          jpegThumbnail: thumb3
-        }
+  }),
+
+  resolveConverterPayload(link, f = "128k") {
+    return {
+      link,
+      format: "mp3",
+      audioBitrate: f.replace("k", ""),
+      filenameStyle: "pretty"
+    }
+  },
+
+  sanitizeFileName(n) {
+    if (!n) return "audio.mp3"
+    const ext = ".mp3"
+    const base = n.replace(/\.[^/.]+$/, "")
+      .replace(/[^A-Za-z0-9]/g, "_")
+      .replace(/_+/g, "_")
+      .toLowerCase()
+    return base + ext
+  },
+
+  async getBuffer(u) {
+    const r = await fetch(u)
+    if (!r.ok) throw Error("Error al descargar")
+    return Buffer.from(await r.arrayBuffer())
+  },
+
+  async getKey() {
+    const r = await fetch(this.static.baseUrl + "/v2/sanity/key", { headers: this.static.headers })
+    const j = await r.json().catch(() => ({}))
+    if (!j?.key) throw Error("Sin key")
+    return j.key
+  },
+
+  async convert(u, f) {
+    const key = await this.getKey()
+    const payload = this.resolveConverterPayload(u, f)
+
+    const r = await fetch(this.static.baseUrl + "/v2/converter", {
+      method: "POST",
+      headers: { ...this.static.headers, key },
+      body: new URLSearchParams(payload)
+    })
+
+    const j = await r.json().catch(() => ({}))
+    if (!j?.url) throw Error("Fallo conversión")
+    return j
+  },
+
+  async download(u, f) {
+    const { url, filename } = await this.convert(u, f)
+    const buffer = await this.getBuffer(url)
+    return { buffer, fileName: this.sanitizeFileName(filename) }
+  }
+}
+
+const handler = async (m, { conn, args }) => {
+  if (!args[0]) return m.reply("🎵 Pasa el link o nombre")
+  await m.react("⌛")
+
+  let url = "", title = "", thumbnail = ""
+
+  if (args[0].includes("youtu")) {
+    const id = args[0].includes("v=")
+      ? args[0].split("v=")[1]?.split("&")[0]
+      : args[0].split("/").pop()
+
+    if (!id) return m.reply("❌ Link inválido")
+
+    const info = await yts({ videoId: id }).catch(() => null)
+    if (!info) return m.reply("❌ Sin info")
+
+    url = "https://www.youtube.com/watch?v=" + id
+    title = info.title
+    thumbnail = info.thumbnail
+  } else {
+    const search = await yts(args.join(" ")).catch(() => ({ videos: [] }))
+    if (!search.videos.length) return m.reply("❌ No encontrado")
+
+    const v = search.videos[0]
+    url = v.url
+    title = v.title
+    thumbnail = v.thumbnail
+  }
+
+  let thumb = null
+  try {
+    thumb = await resizeImage(Buffer.from(await (await fetch(thumbnail)).arrayBuffer()))
+  } catch {}
+
+  let fake = null
+  try {
+    const res = await fetch("https://o.uguu.se/MJVbgdQD.jpg")
+    fake = Buffer.from(await res.arrayBuffer())
+  } catch {}
+
+  const fkontak = {
+    key: { fromMe: false, participant: "0@s.whatsapp.net" },
+    message: {
+      documentMessage: {
+        title: `🎵「 ${title} 」`,
+        fileName: name,
+        jpegThumbnail: fake || undefined
       }
     }
-    if (["ytmp3doc"].includes(command)) {
-      await m.react("✅")
-      const dl = await savetube.download(url, "audio")
-      if (!dl.status) return m.reply(`❌ Error zorra: ${dl.error}`)
-      await conn.sendMessage(
-        m.chat,
-        {
-          document: { url: dl.result.download },
-          mimetype: "audio/mpeg",
-          fileName: `${dl.result.title}.mp3`,
-          caption: `${dl.result.title}`,
-          jpegThumbnail: thumbResized
-        },
-        { quoted: fkontak }
-      )
-      return
-    }
-  } catch (error) {
-    console.error("❌ Error:", error)
-    return m.reply(`💢 Error perra: ${error.message}`)
   }
+
+  let buffer, fileName
+
+  try {
+    const res = await yt.download(url, "128k")
+    buffer = res.buffer
+    fileName = res.fileName
+  } catch {
+    const fallback = await getFallbackMp3(url, url.split("v=")[1]?.split("&")[0])
+    buffer = await yt.getBuffer(fallback)
+    fileName = "audio.mp3"
+  }
+
+  await conn.sendMessage(
+    m.chat,
+    {
+      document: buffer,
+      mimetype: "audio/mpeg",
+      fileName: fileName.endsWith(".mp3") ? fileName : fileName + ".mp3",
+      jpegThumbnail: thumb || undefined
+    },
+    { quoted: fkontak }
+  )
+
+  await m.react("✅")
 }
 
 handler.command = ["ytmp3doc"]
-handler.help = ["ytmp3doc"]
 handler.tags = ["descargas"]
+handler.help = ["ytmp3doc <link|nombre>"]
 
 export default handler

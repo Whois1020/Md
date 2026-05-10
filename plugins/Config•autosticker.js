@@ -37,7 +37,7 @@ handler.all = async function (m) {
         externalAdReply: {
           showAdAttribution: false,
           title: `Auto estikers 😈`,
-          body: `✡︎ Black-clover-MD • The Carlos`,
+          body: `✡︎ Arceus Whois  ⚡`,
           mediaType: 2,
           sourceUrl: global.redes || '',
           thumbnail: global.icons || null

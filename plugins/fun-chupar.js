@@ -1,4 +1,4 @@
-//código creado x The Carlos 👑 
+//código creado x Whois 👑 
 let handler = async (m, { conn, command, text }) => {
 if (!text) throw `*Ingrese el @ o el nombre de la persona que quieras saber si te puedes ${command.replace('how', '')}*`
 let user = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted.sender
@@ -13,5 +13,5 @@ conn.reply(m.chat, `
 
 handler.command ='chupar', /^(chupar|Chupar|chuparsela|violar)/i
 handler.fail = null
-handler.register = true
+handler.register = false
 export default handler

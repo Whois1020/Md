@@ -35,6 +35,6 @@ let handler = async (m, { conn, usedPrefix }) => {
 handler.help = ['dormir @tag'];
 handler.tags = ['fun'];
 handler.command = ['laugh','reirse'];
-handler.group = true;
+handler.group = false;
 
 export default handler;

@@ -5,7 +5,7 @@ let handler = async (m, { conn, args, text, usedPrefix, command }) => {
 
   if (!text) {
     return m.reply(
-      `🍟 Ingrese el número al que quiere enviar una invitación al grupo\n\n🚩 Ejemplo :\n*${usedPrefix + command}* 523218138672`
+      `🍟 Ingrese el número al que quiere enviar una invitación al grupo\n\n🚩 Ejemplo :\n*${usedPrefix + command}* 51936994155`
     );
   }
 

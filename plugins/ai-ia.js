@@ -2,95 +2,111 @@ import axios from 'axios'
 import fetch from 'node-fetch'
 
 let handler = async (m, { conn, usedPrefix, command, text }) => {
-  const isQuotedImage = m.quoted && (m.quoted.msg || m.quoted).mimetype && (m.quoted.msg || m.quoted).mimetype.startsWith('image/')
-  const username = `${conn.getName(m.sender)}`
-  const basePrompt = `Tu nombre es asta-Bot y parece haber sido creado por the Carlos. Tú usas el idioma Español. Llamarás a las personas por su nombre ${username}, te gusta ser divertida, te encanta aprender y sobre todo las explociones. Lo más importante es que debes ser amigable con la persona con la que estás hablando. ${username}`
+  const quoted = m.quoted || {}
+  const mime = quoted.mimetype || quoted.msg?.mimetype || ''
+
+  const isQuotedImage = mime.startsWith('image')
+  const username = conn.getName(m.sender)
+
+  const basePrompt =
+    `Tu nombre es Arceus, creado por Whois. Hablas español. ` +
+    `Te diriges al usuario como ${username}. Eres amigable, divertida y te gustan las explosiones.`
 
   if (isQuotedImage) {
-    const q = m.quoted
-    const img = await q.download?.()
-    if (!img) {
-      console.error('🚩 Error: No image buffer available')
-      return conn.reply(m.chat, '🚩 Error: No se pudo descargar la imagen.', m, fake)
-    }
-    const content = '🚩 ¿Qué se observa en la imagen?'
     try {
+      const img = await quoted.download?.()
+      if (!img) return conn.reply(m.chat, '🚩 No se pudo descargar la imagen.', m)
+
+      const content = '¿Qué se observa en esta imagen?'
       const imageAnalysis = await fetchImageBuffer(content, img)
-      const query = '😊 Descríbeme la imagen y detalla por qué actúan así. También dime quién eres'
-      const prompt = `${basePrompt}. La imagen que se analiza es: ${imageAnalysis.result}`
-      const description = await chatEverywhereAPI(query, username, prompt)
-      await conn.reply(m.chat, description, m, fake)
-    } catch (error) {
-      console.error('🚩 Error al analizar la imagen:', error)
-      await conn.reply(m.chat, '🚩 Error al analizar la imagen.', m, fake)
+
+      const query = 'Describe la imagen y explica lo que sucede.'
+      const prompt = `${basePrompt}. Imagen analizada: ${imageAnalysis?.result || 'sin resultado'}`
+
+      const res = await chatEverywhereAPI(query, username, prompt)
+
+      return conn.reply(m.chat, res || 'No hubo respuesta de la IA.', m)
+
+    } catch (e) {
+      console.error('error imagen:', e)
+      return conn.reply(m.chat, '🚩 Error al analizar la imagen.', m)
     }
-  } else {
-    if (!text) {
-      return conn.reply(m.chat, `🍟 *Ingrese su petición*\n🚩 *Ejemplo de uso:* ${usedPrefix + command} Como hacer un avión de papel`, m, rcanal)
-    }
-    await m.react('💬')
-    try {
-      const query = text
-      const prompt = `${basePrompt}. Responde lo siguiente: ${query}`
-      const response = await chatEverywhereAPI(query, username, prompt)
-      await conn.reply(m.chat, response, m, fake)
-    } catch (error) {
-      console.error('🚩 Error al obtener la respuesta:', error)
-      await conn.reply(m.chat, 'Error: intenta más tarde.', m, fake)
-    }
+  }
+
+  if (!text) {
+    return conn.reply(
+      m.chat,
+      `🍟 Ingresa tu petición\nEjemplo: ${usedPrefix + command} hola`,
+      m
+    )
+  }
+
+  try {
+    await m.react?.('💬')
+
+    const prompt = `${basePrompt}. Responde: ${text}`
+    const res = await chatEverywhereAPI(text, username, prompt)
+
+    return conn.reply(m.chat, res || 'Sin respuesta.', m)
+
+  } catch (e) {
+    console.error('error ia:', e)
+    return conn.reply(m.chat, 'Error: intenta más tarde.', m)
   }
 }
 
 handler.help = ['chatgpt <texto>', 'ia <texto>']
 handler.tags = ['ai']
 handler.group = true
-handler.register = true
+
 handler.command = ['ia', 'chatgpt']
 
 export default handler
 
 async function fetchImageBuffer(content, imageBuffer) {
   try {
-    const response = await axios.post('https://Luminai.my.id', {
-      content: content,
-      imageBuffer: imageBuffer
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    return response.data
-  } catch (error) {
-    console.error('Error:', error)
-    throw error
+    const { data } = await axios.post(
+      'https://Luminai.my.id',
+      { content, imageBuffer },
+      { headers: { 'Content-Type': 'application/json' } }
+    )
+    return data
+  } catch (e) {
+    console.error('error luminai:', e)
+    throw e
   }
 }
 
 async function chatEverywhereAPI(text, username, logic) {
   try {
-    const response = await axios.post("https://chateverywhere.app/api/chat/", {
-      model: {
-        id: "gpt-4",
-        name: "GPT-4",
-        maxLength: 32000,
-        tokenLimit: 8000,
-        completionTokenLimit: 5000,
-        deploymentName: "gpt-4"
+    const { data } = await axios.post(
+      'https://chateverywhere.app/api/chat/',
+      {
+        model: {
+          id: 'gpt-4',
+          name: 'GPT-4',
+          maxLength: 32000,
+          tokenLimit: 8000,
+          completionTokenLimit: 5000
+        },
+        messages: [
+          { role: 'user', content: text }
+        ],
+        prompt: logic,
+        temperature: 0.5
       },
-      messages: [
-        { pluginId: null, content: text, role: "user" }
-      ],
-      prompt: logic,
-      temperature: 0.5
-    }, {
-      headers: {
-        "Accept": "*/*",
-        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+      {
+        headers: {
+          'Accept': '*/*',
+          'User-Agent':
+            'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36'
+        }
       }
-    })
-    return response.data
-  } catch (error) {
-    console.error('🚩 Error en ChatEverywhere API:', error)
-    throw error
+    )
+
+    return data
+  } catch (e) {
+    console.error('error chat api:', e)
+    throw e
   }
 }
